@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Note Repo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+    <div id="login-screen" class="login-container">
+        <button id="theme-toggle-login" class="btn-icon login-theme-btn" onclick="toggleDarkMode()">🌙</button>
+        <div class="login-box">
+            <h1 style="color: var(--primary-color); margin-bottom: 10px;">PadhaiHub</h1>
+            <p style="margin-bottom: 25px;">Select your role to access the repository</p>
+            <button class="btn-view" style="width: 100%; margin-bottom: 10px;" onclick="handleLogin('student')">Student Login</button>
+            <button class="btn-danger" style="width: 100%;" onclick="handleLogin('teacher')">Admin Login</button>
+        </div>
+    </div>
+
+    <div id="app-screen" class="hidden">
+        <nav>
+            <h1>PadhaiHub</h1>
+            <div class="nav-controls">
+                <input type="text" id="search-bar" placeholder="Search notes..." onkeyup="applyFilters()">
+                
+                <select id="category-filter" onchange="applyFilters()">
+                    <option value="All">All Subjects</option>
+                    <option value="Course Policies">Course Policies</option>
+                    <option value="LADE">LADE</option>
+                    <option value="Quantum Physics">Quantum Physics</option>
+                    <option value="Product Realization">Product Realization</option>
+                    <option value="WebDev">Web Development</option>
+                    <option value="BEEE">BEEE</option>
+                </select>
+
+                <button id="theme-toggle" class="btn-icon" onclick="toggleDarkMode()">🌙</button>
+                <button class="btn-danger" onclick="logout()">Logout</button> 
+            </div>
+        </nav>
+
+        <main>
+            <section id="upload-panel" class="hidden">
+                <h2>Add New Resource</h2>
+                <div class="upload-grid">
+                    <input type="text" id="note-title" placeholder="Title (e.g., Wave Optics Guide)">
+                    <input type="text" id="note-link" placeholder="Link to PDF/Drive">
+                    <select id="note-category">
+                        <option value="Course Policies">Course Policies</option>
+                        <option value="LADE">LADE</option>
+                        <option value="Quantum Physics">Quantum Physics</option>
+                        <option value="Product Realization">Product Realization</option>
+                        <option value="WebDev">Web Development</option>
+                        <option value="BEEE">BEEE</option>
+                    </select>
+                    <button class="btn-success" onclick="addNote()">Post Note</button>
+                </div>
+            </section>
+
+            <section id="repo-section">
+                <h2>Repository</h2>
+                <div id="notes-container" class="notes-grid">
+                    </div>
+            </section>
+        </main>
+    </div>
+    
+    <script type="module" src="script.js"></script>
+</body>
+</html>

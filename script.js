@@ -23,10 +23,8 @@ let notes = [];
 let currentRole = 'student'; 
 let favorites = JSON.parse(localStorage.getItem('studyHubFavorites')) || [];
 let editingId = null;
-
 let isLoginMode = true; 
 const SECRET_TEACHER_CODE = "ADMIN0011";
-
 window.switchAuthMode = function(mode) {
     isLoginMode = mode === 'login';
     document.getElementById('signup-extras').classList.toggle('hidden', isLoginMode);
@@ -36,7 +34,6 @@ window.switchAuthMode = function(mode) {
     document.getElementById('tab-login').className = isLoginMode ? 'btn-primary' : 'btn-view';
     document.getElementById('tab-signup').className = !isLoginMode ? 'btn-primary' : 'btn-view';
 }
-
 window.checkRole = function() {
     const role = document.getElementById('auth-role').value;
     const codeInput = document.getElementById('teacher-code');
@@ -46,43 +43,35 @@ window.checkRole = function() {
         codeInput.classList.add('hidden');
     }
 }
-
 window.processAuth = async function() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
-    
     if (!email || !password) {
         showToast("Please enter an email and password.", "error");
         return;
     }
-
     const btn = document.getElementById('auth-submit-btn');
     btn.textContent = "Processing...";
     btn.disabled = true;
-
     try {
         if (!isLoginMode) {
             const role = document.getElementById('auth-role').value;
             const enteredCode = document.getElementById('teacher-code').value;
-
             if (role === 'teacher' && enteredCode !== SECRET_TEACHER_CODE) {
                 showToast("Invalid Teacher Secret Code.", "error");
                 btn.textContent = "Create Account";
                 btn.disabled = false;
                 return;
             }
-
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-
             await setDoc(doc(db, "users", user.uid), { email: email, role: role });
             currentRole = role;
             showToast("Account created successfully!", "success");
-
-        } else {
+        } 
+        else {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-
             const userDoc = await getDoc(doc(db, "users", user.uid));
             if (userDoc.exists()) {
                 currentRole = userDoc.data().role;
@@ -91,65 +80,59 @@ window.processAuth = async function() {
             }
             showToast(`Welcome back! Logged in as ${currentRole}.`, "success");
         }
-
         finalizeLogin();
-
-    } catch (error) {
+    } 
+    catch (error) {
         console.error("Auth Error:", error);
         if (error.code === 'auth/email-already-in-use') showToast("Email already in use.", "error");
         else if (error.code === 'auth/weak-password') showToast("Password must be at least 6 characters.", "error");
         else showToast("Authentication failed.", "error");
-    } finally {
+    }
+    finally {
         btn.textContent = isLoginMode ? "Secure Log In" : "Create Account";
         btn.disabled = false;
     }
 }
-
 window.signInWithGoogle = async function() {
     try {
         const result = await signInWithPopup(auth, googleProvider);
-        const user = result.user;
-        
+        const user = result.user;       
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
-        
         if (userDoc.exists()) {
             currentRole = userDoc.data().role;
             showToast(`Welcome back! Logged in as ${currentRole}.`, "success");
-        } else {
+        } 
+        else {
             currentRole = 'student';
             await setDoc(userDocRef, { email: user.email, role: 'student' });
             showToast("Student account created via Google!", "success");
         }
-        
         finalizeLogin();
-
-    } catch (error) {
+    } 
+    catch (error) {
         console.error("Google Auth Error:", error);
         if (error.code !== 'auth/popup-closed-by-user') showToast("Failed to sign in with Google.", "error");
     }
 }
-
 function finalizeLogin() {
     document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('app-screen').classList.remove('hidden');
-    
+    document.getElementById('app-screen').classList.remove('hidden');   
     if (currentRole === 'teacher') document.getElementById('upload-panel').classList.remove('hidden');
     else document.getElementById('upload-panel').classList.add('hidden');
-    
     document.getElementById('auth-email').value = '';
     document.getElementById('auth-password').value = '';
     document.getElementById('teacher-code').value = '';
-    
     document.getElementById('search-bar').value = '';
     document.getElementById('category-filter').value = 'All';
+    fetchSubjects();
     renderNotes();
 }
-
 window.logout = async function() {
     try {
         await signOut(auth);
-    } catch (error) {
+    }
+    catch (error) {
         console.error("Error signing out:", error);
     }
     document.getElementById('app-screen').classList.add('hidden');
@@ -157,34 +140,28 @@ window.logout = async function() {
     currentRole = 'student';
     showToast("Logged out securely.", "info");
 }
-
 async function fetchNotes() {
     try {
         const q = query(collection(db, "studyHubNotes"), orderBy("timestamp", "desc"));
-        const querySnapshot = await getDocs(q);
-        
+        const querySnapshot = await getDocs(q);       
         notes = [];
-        
         querySnapshot.forEach((doc) => {
             notes.push({ id: doc.id, ...doc.data() }); 
         });
-        
         applyFilters(); 
-    } catch (error) {
+    }
+    catch (error) {
         console.error("Error fetching notes: ", error);
         document.getElementById('notes-container').innerHTML = '<p>Error loading repository. Check your connection.</p>';
     }
 }
-
 function renderNotes(dataToRender = notes) {
     const container = document.getElementById('notes-container');
-    container.innerHTML = '';
-    
+    container.innerHTML = '';   
     if (dataToRender.length === 0) {
         container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">No resources found.</p>';
         return;
     }
-
     dataToRender.forEach((note) => {
         let dateDisplay = "Date Unknown";
         if (note.timestamp) {
@@ -195,19 +172,15 @@ function renderNotes(dataToRender = notes) {
                 year: 'numeric' 
             });
         }
-
         const isFav = favorites.includes(note.id);
         const starIcon = isFav ? '⭐' : '☆';
         const favBtn = `<button class="btn-icon fav-btn" onclick="toggleFavorite('${note.id}')" title="Toggle Favorite">${starIcon}</button>`;
-
         const editBtn = currentRole === 'teacher' 
             ? `<button class="btn-warning" onclick="editNote('${note.id}')">Edit</button>` 
             : '';
-            
         const deleteBtn = currentRole === 'teacher' 
             ? `<button class="btn-danger" onclick="deleteNote('${note.id}')">Delete</button>` 
             : '';
-
         container.innerHTML += `
             <div class="note-card">
                 <div class="note-header" style="display: flex; justify-content: space-between; align-items: start;">
@@ -226,17 +199,14 @@ function renderNotes(dataToRender = notes) {
         `;
     });
 }
-
 window.addNote = async function() {
     const title = document.getElementById('note-title').value.trim();
     const link = document.getElementById('note-link').value.trim();
     const category = document.getElementById('note-category').value;
-
     if (title && link) {
         const btn = document.getElementById('submit-btn');
         btn.textContent = "Saving...";
         btn.disabled = true;
-
         try {
             if (editingId) {
                 const noteRef = doc(db, "studyHubNotes", editingId);
@@ -245,7 +215,8 @@ window.addNote = async function() {
                     link: link,
                     category: category
                 });
-            } else {
+            }
+            else {
                 await addDoc(collection(db, "studyHubNotes"), {
                     title: title,
                     link: link,
@@ -253,47 +224,40 @@ window.addNote = async function() {
                     timestamp: Date.now() 
                 });
             }
-            
             window.cancelEdit();
             fetchNotes();
             showToast("Note saved successfully!", "success");
-            
-        } catch (e) {
+        }
+        catch (e) {
             console.error("Error saving document: ", e);
             showToast("Failed to save note.", "error");
-        } finally {
+        }
+        finally {
             btn.disabled = false;
         }
-    } else {
+    }
+    else {
         showToast("Please provide both a title and a link.", "error");
     }
 }
-
 window.editNote = function(id) {
     const noteToEdit = notes.find(n => n.id === id);
-    if (!noteToEdit) return;
-    
+    if (!noteToEdit) return;   
     document.getElementById('note-title').value = noteToEdit.title;
     document.getElementById('note-link').value = noteToEdit.link;
     document.getElementById('note-category').value = noteToEdit.category;
-    
     editingId = id;
-    
     document.getElementById('submit-btn').textContent = "Update Note";
     document.getElementById('cancel-edit-btn').classList.remove('hidden');
-    
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
 window.cancelEdit = function() {
     editingId = null;
     document.getElementById('note-title').value = '';
-    document.getElementById('note-link').value = '';
-    
+    document.getElementById('note-link').value = '';   
     document.getElementById('submit-btn').textContent = "Post Note";
     document.getElementById('cancel-edit-btn').classList.add('hidden');
 }
-
 window.deleteNote = async function(id) {
     if (confirm("Are you sure you want to remove this resource permanently?")) {
         try {
@@ -306,104 +270,151 @@ window.deleteNote = async function(id) {
         }
     }
 }
-
+window.fetchSubjects = async function() {
+    try {
+        const q = query(collection(db, "subjects"), orderBy("name"));
+        const querySnapshot = await getDocs(q);
+        const filterSelect = document.getElementById('category-filter');
+        const uploadSelect = document.getElementById('note-category');
+        const deleteSelect = document.getElementById('delete-subject-select');
+        filterSelect.innerHTML = '<option value="All">All Subjects</option>';
+        uploadSelect.innerHTML = '';
+        if (deleteSelect) deleteSelect.innerHTML = '';
+        querySnapshot.forEach((doc) => {
+            const subjectName = doc.data().name;
+            const subjectId = doc.id;            
+            filterSelect.innerHTML += `<option value="${subjectName}">${subjectName}</option>`;
+            uploadSelect.innerHTML += `<option value="${subjectName}">${subjectName}</option>`;
+            if (deleteSelect) {
+                deleteSelect.innerHTML += `<option value="${subjectId}">${subjectName}</option>`;
+            }
+        });
+    }
+    catch (error) {
+        console.error("Error fetching subjects:", error);
+    }
+}
+window.addSubject = async function() {
+    const nameInput = document.getElementById('new-subject-name');
+    const subjectName = nameInput.value.trim();   
+    if (!subjectName) {
+        showToast("Please enter a subject name.", "error");
+        return;
+    }
+    try {
+        await addDoc(collection(db, "subjects"), { name: subjectName });
+        showToast(`Subject "${subjectName}" added!`, "success");
+        nameInput.value = '';
+        fetchSubjects();
+    }
+    catch (error) {
+        console.error("Error adding subject:", error);
+        showToast("Failed to add subject.", "error");
+    }
+}
+window.deleteSubject = async function() {
+    const select = document.getElementById('delete-subject-select');
+    const subjectId = select.value;
+    const subjectName = select.options[select.selectedIndex]?.text;
+    if (!subjectId) {
+        showToast("No subject selected to delete.", "error");
+        return;
+    }
+    const confirmDelete = confirm(`Are you sure you want to delete "${subjectName}"?`);
+    if (!confirmDelete) 
+    return;
+    try {
+        await deleteDoc(doc(db, "subjects", subjectId));
+        showToast(`Subject "${subjectName}" removed.`, "info");
+        fetchSubjects();
+    }
+    catch (error) {
+        console.error("Error deleting subject:", error);
+        showToast("Failed to remove subject.", "error");
+    }
+}
 window.toggleFavorite = function(id) {
     if (favorites.includes(id)) {
         favorites = favorites.filter(favId => favId !== id);
-    } else {
+    }
+    else {
         favorites.push(id);
     }
     localStorage.setItem('studyHubFavorites', JSON.stringify(favorites));
     applyFilters(); 
 }
-
 window.applyFilters = function() {
     const searchQuery = document.getElementById('search-bar').value.toLowerCase();
     const selectedCategory = document.getElementById('category-filter').value;
-
     const filteredNotes = notes.filter(note => {
-        const matchesSearch = note.title.toLowerCase().includes(searchQuery);
-        
+    const matchesSearch = note.title.toLowerCase().includes(searchQuery);    
         let matchesCategory = false;
         if (selectedCategory === "All") {
             matchesCategory = true;
-        } else if (selectedCategory === "Favorites") {
+        }
+        else if (selectedCategory === "Favorites") {
             matchesCategory = favorites.includes(note.id);
-        } else {
+        }
+        else {
             matchesCategory = note.category === selectedCategory;
         }
-        
         return matchesSearch && matchesCategory;
     });
-
     renderNotes(filteredNotes);
 }
-
 window.showToast = function(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    
+    const container = document.getElementById('toast-container');   
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
-    
     container.appendChild(toast);
-    
     setTimeout(() => {
         toast.classList.add('show');
     }, 10);
-    
     setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300); 
     }, 3000);
 }
-
 window.handleLogin = function(role) {
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
-    const uploadPanel = document.getElementById('upload-panel');
-    
+    const uploadPanel = document.getElementById('upload-panel');   
     if (role === 'teacher') {
         if (prompt("Enter Admin Password:") === "Admin123") { 
             currentRole = 'teacher';
             showToast("Welcome, Admin!", "success");
             uploadPanel.classList.remove('hidden');
-        } else {
+        }
+        else {
             showToast("Incorrect Password!", "error");
             return;
         }
-    } else {
+    }
+    else {
         currentRole = 'student';
         uploadPanel.classList.add('hidden');
     }
-    
     loginScreen.classList.add('hidden');
     appScreen.classList.remove('hidden');
     document.getElementById('search-bar').value = '';
     document.getElementById('category-filter').value = 'All';
     renderNotes(); 
 }
-
 window.logout = function() {
     document.getElementById('app-screen').classList.add('hidden');
     document.getElementById('login-screen').classList.remove('hidden');
     currentRole = 'student';
 }
-
 window.toggleDarkMode = function() {
     const body = document.documentElement;
     const currentTheme = body.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    body.setAttribute('data-theme', newTheme);
-    
+    body.setAttribute('data-theme', newTheme);   
     const themeIcon = newTheme === 'dark' ? '☀️' : '🌙';
-    
     const navBtn = document.getElementById('theme-toggle');
     if (navBtn) navBtn.textContent = themeIcon;
-    
     const loginBtn = document.getElementById('theme-toggle-login');
     if (loginBtn) loginBtn.textContent = themeIcon;
 }
-
 fetchNotes();
-

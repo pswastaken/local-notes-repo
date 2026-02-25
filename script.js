@@ -4,13 +4,13 @@ import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, s
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCFWwVVHUBppZgxrf4FYB8G_TeYgjyY6CY",
-  authDomain: "student-notes-repo.firebaseapp.com",
-  projectId: "student-notes-repo",
-  storageBucket: "student-notes-repo.firebasestorage.app",
-  messagingSenderId: "475928296488",
-  appId: "1:475928296488:web:19361d1eccd8d77d01891d",
-  measurementId: "G-6711BP99LP"
+    apiKey: "AIzaSyCFWwVVHUBppZgxrf4FYB8G_TeYgjyY6CY",
+    authDomain: "student-notes-repo.firebaseapp.com",
+    projectId: "student-notes-repo",
+    storageBucket: "student-notes-repo.firebasestorage.app",
+    messagingSenderId: "475928296488",
+    appId: "1:475928296488:web:19361d1eccd8d77d01891d",
+    measurementId: "G-6711BP99LP"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -25,15 +25,16 @@ let favorites = JSON.parse(localStorage.getItem('studyHubFavorites')) || [];
 let editingId = null;
 let isLoginMode = true; 
 const SECRET_TEACHER_CODE = "ADMIN0011";
+
 window.switchAuthMode = function(mode) {
     isLoginMode = mode === 'login';
     document.getElementById('signup-extras').classList.toggle('hidden', isLoginMode);
     document.getElementById('auth-submit-btn').textContent = isLoginMode ? "Secure Log In" : "Create Account";
     document.getElementById('auth-subtitle').textContent = isLoginMode ? "Welcome back! Please log in." : "Create a new account.";
-    
     document.getElementById('tab-login').className = isLoginMode ? 'btn-primary' : 'btn-view';
     document.getElementById('tab-signup').className = !isLoginMode ? 'btn-primary' : 'btn-view';
 }
+
 window.checkRole = function() {
     const role = document.getElementById('auth-role').value;
     const codeInput = document.getElementById('teacher-code');
@@ -43,6 +44,7 @@ window.checkRole = function() {
         codeInput.classList.add('hidden');
     }
 }
+
 window.processAuth = async function() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
@@ -68,8 +70,7 @@ window.processAuth = async function() {
             await setDoc(doc(db, "users", user.uid), { email: email, role: role });
             currentRole = role;
             showToast("Account created successfully!", "success");
-        } 
-        else {
+        } else {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
             const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -81,18 +82,17 @@ window.processAuth = async function() {
             showToast(`Welcome back! Logged in as ${currentRole}.`, "success");
         }
         finalizeLogin();
-    } 
-    catch (error) {
+    } catch (error) {
         console.error("Auth Error:", error);
         if (error.code === 'auth/email-already-in-use') showToast("Email already in use.", "error");
         else if (error.code === 'auth/weak-password') showToast("Password must be at least 6 characters.", "error");
         else showToast("Authentication failed.", "error");
-    }
-    finally {
+    } finally {
         btn.textContent = isLoginMode ? "Secure Log In" : "Create Account";
         btn.disabled = false;
     }
 }
+
 window.signInWithGoogle = async function() {
     try {
         const result = await signInWithPopup(auth, googleProvider);
@@ -102,19 +102,18 @@ window.signInWithGoogle = async function() {
         if (userDoc.exists()) {
             currentRole = userDoc.data().role;
             showToast(`Welcome back! Logged in as ${currentRole}.`, "success");
-        } 
-        else {
+        } else {
             currentRole = 'student';
             await setDoc(userDocRef, { email: user.email, role: 'student' });
             showToast("Student account created via Google!", "success");
         }
         finalizeLogin();
-    } 
-    catch (error) {
+    } catch (error) {
         console.error("Google Auth Error:", error);
         if (error.code !== 'auth/popup-closed-by-user') showToast("Failed to sign in with Google.", "error");
     }
 }
+
 function finalizeLogin() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-screen').classList.remove('hidden');   
@@ -128,11 +127,11 @@ function finalizeLogin() {
     fetchSubjects();
     renderNotes();
 }
+
 window.logout = async function() {
     try {
         await signOut(auth);
-    }
-    catch (error) {
+    } catch (error) {
         console.error("Error signing out:", error);
     }
     document.getElementById('app-screen').classList.add('hidden');
@@ -140,21 +139,22 @@ window.logout = async function() {
     currentRole = 'student';
     showToast("Logged out securely.", "info");
 }
+
 async function fetchNotes() {
     try {
         const q = query(collection(db, "studyHubNotes"), orderBy("timestamp", "desc"));
-        const querySnapshot = await getDocs(q);       
+        const querySnapshot = await getDocs(q);        
         notes = [];
         querySnapshot.forEach((doc) => {
             notes.push({ id: doc.id, ...doc.data() }); 
         });
         applyFilters(); 
-    }
-    catch (error) {
+    } catch (error) {
         console.error("Error fetching notes: ", error);
         document.getElementById('notes-container').innerHTML = '<p>Error loading repository. Check your connection.</p>';
     }
 }
+
 function renderNotes(dataToRender = notes) {
     const container = document.getElementById('notes-container');
     container.innerHTML = '';   
@@ -199,6 +199,7 @@ function renderNotes(dataToRender = notes) {
         `;
     });
 }
+
 window.addNote = async function() {
     const title = document.getElementById('note-title').value.trim();
     const link = document.getElementById('note-link').value.trim();
@@ -215,8 +216,7 @@ window.addNote = async function() {
                     link: link,
                     category: category
                 });
-            }
-            else {
+            } else {
                 await addDoc(collection(db, "studyHubNotes"), {
                     title: title,
                     link: link,
@@ -225,21 +225,21 @@ window.addNote = async function() {
                 });
             }
             window.cancelEdit();
+            document.getElementById('category-filter').value = 'All';
+            document.getElementById('search-bar').value = '';
             fetchNotes();
             showToast("Note saved successfully!", "success");
-        }
-        catch (e) {
+        } catch (e) {
             console.error("Error saving document: ", e);
             showToast("Failed to save note.", "error");
-        }
-        finally {
+        } finally {
             btn.disabled = false;
         }
-    }
-    else {
+    } else {
         showToast("Please provide both a title and a link.", "error");
     }
 }
+
 window.editNote = function(id) {
     const noteToEdit = notes.find(n => n.id === id);
     if (!noteToEdit) return;   
@@ -251,6 +251,7 @@ window.editNote = function(id) {
     document.getElementById('cancel-edit-btn').classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
 window.cancelEdit = function() {
     editingId = null;
     document.getElementById('note-title').value = '';
@@ -258,6 +259,7 @@ window.cancelEdit = function() {
     document.getElementById('submit-btn').textContent = "Post Note";
     document.getElementById('cancel-edit-btn').classList.add('hidden');
 }
+
 window.deleteNote = async function(id) {
     if (confirm("Are you sure you want to remove this resource permanently?")) {
         try {
@@ -270,6 +272,7 @@ window.deleteNote = async function(id) {
         }
     }
 }
+
 window.fetchSubjects = async function() {
     try {
         const q = query(collection(db, "subjects"), orderBy("name"));
@@ -285,10 +288,8 @@ window.fetchSubjects = async function() {
         querySnapshot.forEach((doc) => {
             const subjectName = doc.data().name;
             const subjectId = doc.id; 
-            
             filterSelect.add(new Option(subjectName, subjectName));
             uploadSelect.add(new Option(subjectName, subjectName));
-            
             if (deleteSelect) {
                 deleteSelect.add(new Option(subjectName, subjectId));
             }
@@ -297,6 +298,7 @@ window.fetchSubjects = async function() {
         console.error("Error fetching subjects:", error);
     }
 }
+
 window.addSubject = async function() {
     const nameInput = document.getElementById('new-subject-name');
     const subjectName = nameInput.value.trim();   
@@ -309,12 +311,12 @@ window.addSubject = async function() {
         showToast(`Subject "${subjectName}" added!`, "success");
         nameInput.value = '';
         fetchSubjects();
-    }
-    catch (error) {
+    } catch (error) {
         console.error("Error adding subject:", error);
         showToast("Failed to add subject.", "error");
     }
 }
+
 window.deleteSubject = async function() {
     const select = document.getElementById('delete-subject-select');
     const subjectId = select.value;
@@ -324,47 +326,45 @@ window.deleteSubject = async function() {
         return;
     }
     const confirmDelete = confirm(`Are you sure you want to delete "${subjectName}"?`);
-    if (!confirmDelete) 
-    return;
+    if (!confirmDelete) return;
     try {
         await deleteDoc(doc(db, "subjects", subjectId));
         showToast(`Subject "${subjectName}" removed.`, "info");
         fetchSubjects();
-    }
-    catch (error) {
+    } catch (error) {
         console.error("Error deleting subject:", error);
         showToast("Failed to remove subject.", "error");
     }
 }
+
 window.toggleFavorite = function(id) {
     if (favorites.includes(id)) {
         favorites = favorites.filter(favId => favId !== id);
-    }
-    else {
+    } else {
         favorites.push(id);
     }
     localStorage.setItem('studyHubFavorites', JSON.stringify(favorites));
     applyFilters(); 
 }
+
 window.applyFilters = function() {
     const searchQuery = document.getElementById('search-bar').value.toLowerCase();
     const selectedCategory = document.getElementById('category-filter').value;
     const filteredNotes = notes.filter(note => {
-    const matchesSearch = note.title.toLowerCase().includes(searchQuery);    
+        const matchesSearch = note.title.toLowerCase().includes(searchQuery);   
         let matchesCategory = false;
         if (selectedCategory === "All") {
             matchesCategory = true;
-        }
-        else if (selectedCategory === "Favorites") {
+        } else if (selectedCategory === "Favorites") {
             matchesCategory = favorites.includes(note.id);
-        }
-        else {
+        } else {
             matchesCategory = note.category === selectedCategory;
         }
         return matchesSearch && matchesCategory;
     });
     renderNotes(filteredNotes);
 }
+
 window.showToast = function(message, type = 'info') {
     const container = document.getElementById('toast-container');   
     const toast = document.createElement('div');
@@ -379,6 +379,7 @@ window.showToast = function(message, type = 'info') {
         setTimeout(() => toast.remove(), 300); 
     }, 3000);
 }
+
 window.toggleDarkMode = function() {
     const body = document.documentElement;
     const currentTheme = body.getAttribute('data-theme');
@@ -390,6 +391,5 @@ window.toggleDarkMode = function() {
     const loginBtn = document.getElementById('theme-toggle-login');
     if (loginBtn) loginBtn.textContent = themeIcon;
 }
+
 fetchNotes();
-
-

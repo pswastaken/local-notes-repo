@@ -282,7 +282,8 @@ window.fetchSubjects = async function() {
         if (deleteSelect) deleteSelect.innerHTML = '';
         querySnapshot.forEach((doc) => {
             const subjectName = doc.data().name;
-            const subjectId = doc.id;            
+            const subjectId = doc.id;
+            filterSelect.innerHTML = '<option value="All">All Subjects</option><option value="Favorites">⭐ My Favorites</option>';
             filterSelect.innerHTML += `<option value="${subjectName}">${subjectName}</option>`;
             uploadSelect.innerHTML += `<option value="${subjectName}">${subjectName}</option>`;
             if (deleteSelect) {
@@ -375,36 +376,6 @@ window.showToast = function(message, type = 'info') {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300); 
     }, 3000);
-}
-window.handleLogin = function(role) {
-    const loginScreen = document.getElementById('login-screen');
-    const appScreen = document.getElementById('app-screen');
-    const uploadPanel = document.getElementById('upload-panel');   
-    if (role === 'teacher') {
-        if (prompt("Enter Admin Password:") === "Admin123") { 
-            currentRole = 'teacher';
-            showToast("Welcome, Admin!", "success");
-            uploadPanel.classList.remove('hidden');
-        }
-        else {
-            showToast("Incorrect Password!", "error");
-            return;
-        }
-    }
-    else {
-        currentRole = 'student';
-        uploadPanel.classList.add('hidden');
-    }
-    loginScreen.classList.add('hidden');
-    appScreen.classList.remove('hidden');
-    document.getElementById('search-bar').value = '';
-    document.getElementById('category-filter').value = 'All';
-    renderNotes(); 
-}
-window.logout = function() {
-    document.getElementById('app-screen').classList.add('hidden');
-    document.getElementById('login-screen').classList.remove('hidden');
-    currentRole = 'student';
 }
 window.toggleDarkMode = function() {
     const body = document.documentElement;

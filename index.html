@@ -8,12 +8,37 @@
 <body>
     
     <div id="login-screen" class="login-container">
+        
         <button id="theme-toggle-login" class="btn-icon login-theme-btn" onclick="toggleDarkMode()">🌙</button>
+        
         <div class="login-box">
-            <h1 style="color: var(--primary-color); margin-bottom: 10px;">PadhaiHub</h1>
-            <p style="margin-bottom: 25px;">Select your role to access the repository</p>
-            <button class="btn-view" style="width: 100%; margin-bottom: 10px;" onclick="handleLogin('student')">Student Login</button>
-            <button class="btn-danger" style="width: 100%;" onclick="handleLogin('teacher')">Admin Login</button>
+            <h1 style="color: var(--primary-color); margin-bottom: 10px;">StudyHub</h1>
+            <p id="auth-subtitle" style="margin-bottom: 20px;">Welcome back! Please log in.</p>
+            
+            <div class="auth-tabs" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button id="tab-login" class="btn-primary" style="flex: 1;" onclick="switchAuthMode('login')">Log In</button>
+                <button id="tab-signup" class="btn-view" style="flex: 1;" onclick="switchAuthMode('signup')">Sign Up</button>
+            </div>
+
+            <input type="email" id="auth-email" placeholder="Email Address" style="width: 100%; margin-bottom: 10px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+            <input type="password" id="auth-password" placeholder="Password" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+            
+            <div id="signup-extras" class="hidden">
+                <select id="auth-role" style="width: 100%; margin-bottom: 10px; padding: 10px; border-radius: 4px; border: 1px solid #ccc;" onchange="checkRole()">
+                    <option value="student">I am a Student</option>
+                    <option value="teacher">I am a Teacher</option>
+                </select>
+                <input type="password" id="teacher-code" class="hidden" placeholder="Teacher Secret Code (e.g., ADMIN123)" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+            </div>
+
+            <button id="auth-submit-btn" class="btn-success" style="width: 100%;" onclick="processAuth()">Secure Log In</button>
+            
+            <div style="text-align: center; margin: 15px 0; color: #888; font-size: 0.9rem;">OR</div>
+            
+            <button class="btn-view" style="width: 100%; background-color: #fff; color: #333; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold;" onclick="signInWithGoogle()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 18px;">
+                Sign in with Google
+            </button>
         </div>
     </div>
 
@@ -25,6 +50,7 @@
                 
                 <select id="category-filter" onchange="applyFilters()">
                     <option value="All">All Subjects</option>
+                    <option value="Favorites">⭐ My Favorites</option>
                     <option value="Course Policies">Course Policies</option>
                     <option value="LADE">LADE</option>
                     <option value="Quantum Physics">Quantum Physics</option>
@@ -52,7 +78,9 @@
                         <option value="WebDev">Web Development</option>
                         <option value="BEEE">BEEE</option>
                     </select>
-                    <button class="btn-success" onclick="addNote()">Post Note</button>
+                    <button class="btn-success" onclick="addNote()" id="submit-btn">Post Note</button>
+                    <button class="btn-warning hidden" onclick="cancelEdit()" id="cancel-edit-btn">Cancel Edit</button>
+                    <button class="btn-danger" onclick="login('student')">Logout</button>
                 </div>
             </section>
 
@@ -64,6 +92,7 @@
         </main>
     </div>
     
+    <div id="toast-container" class="toast-container"></div>
     <script type="module" src="script.js"></script>
 </body>
 </html>

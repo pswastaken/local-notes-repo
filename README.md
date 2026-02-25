@@ -34,6 +34,3 @@ PadhaiHub is a secure, responsive, full-stack web application designed to centra
   * **Firebase Authentication:** Managing user sessions and secure logins.
   * **Cloud Firestore:** NoSQL real-time document database.
   * **Firestore Security Rules:** Custom server-side rules preventing unauthorized writes or tampering.
-1. Clone the repository: 
-   ```bash
-   git clone [https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git)

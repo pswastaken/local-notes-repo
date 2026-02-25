@@ -1,9 +1,8 @@
-// 1. Import Firebase Functions (Using Web CDN links)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-// 2. Your Firebase Configuration 
 const firebaseConfig = {
   apiKey: "AIzaSyCFWwVVHUBppZgxrf4FYB8G_TeYgjyY6CY",
   authDomain: "student-notes-repo.firebaseapp.com",
@@ -14,215 +13,396 @@ const firebaseConfig = {
   measurementId: "G-6711BP99LP"
 };
 
-// 3. Initialize Firebase, Analytics, and Firestore
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-const db = getFirestore(app); // THIS WAS MISSING!
-const defaultNotes = [
-    { title: "LADE Course Policy 2025-26", link: "#", category: "Course Policies" },
-    { title: "Quantum Physics Course Policy", link: "#", category: "Course Policies" },
-    { title: "Product Realization Policy", link: "#", category: "Course Policies" },
-    { title: "Web Development Policy", link: "#", category: "Course Policies" },
-    { title: "BEEE Course Policy", link: "#", category: "Course Policies" }
-];
+const db = getFirestore(app);
+const auth = getAuth(app); 
+const googleProvider = new GoogleAuthProvider(); 
 
-// Global State
 let notes = [];
-let currentRole = 'student'; // Default view
+let currentRole = 'student'; 
+let favorites = JSON.parse(localStorage.getItem('studyHubFavorites')) || [];
+let editingId = null;
 
-// 4. Fetch Notes from the Live Firebase Database
+let isLoginMode = true; 
+const SECRET_TEACHER_CODE = "ADMIN0011";
+
+window.switchAuthMode = function(mode) {
+    isLoginMode = mode === 'login';
+    document.getElementById('signup-extras').classList.toggle('hidden', isLoginMode);
+    document.getElementById('auth-submit-btn').textContent = isLoginMode ? "Secure Log In" : "Create Account";
+    document.getElementById('auth-subtitle').textContent = isLoginMode ? "Welcome back! Please log in." : "Create a new account.";
+    
+    document.getElementById('tab-login').className = isLoginMode ? 'btn-primary' : 'btn-view';
+    document.getElementById('tab-signup').className = !isLoginMode ? 'btn-primary' : 'btn-view';
+}
+
+window.checkRole = function() {
+    const role = document.getElementById('auth-role').value;
+    const codeInput = document.getElementById('teacher-code');
+    if (role === 'teacher') {
+        codeInput.classList.remove('hidden');
+    } else {
+        codeInput.classList.add('hidden');
+    }
+}
+
+window.processAuth = async function() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    
+    if (!email || !password) {
+        showToast("Please enter an email and password.", "error");
+        return;
+    }
+
+    const btn = document.getElementById('auth-submit-btn');
+    btn.textContent = "Processing...";
+    btn.disabled = true;
+
+    try {
+        if (!isLoginMode) {
+            const role = document.getElementById('auth-role').value;
+            const enteredCode = document.getElementById('teacher-code').value;
+
+            if (role === 'teacher' && enteredCode !== SECRET_TEACHER_CODE) {
+                showToast("Invalid Teacher Secret Code.", "error");
+                btn.textContent = "Create Account";
+                btn.disabled = false;
+                return;
+            }
+
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            await setDoc(doc(db, "users", user.uid), { email: email, role: role });
+            currentRole = role;
+            showToast("Account created successfully!", "success");
+
+        } else {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+                currentRole = userDoc.data().role;
+            } else {
+                currentRole = 'student'; 
+            }
+            showToast(`Welcome back! Logged in as ${currentRole}.`, "success");
+        }
+
+        finalizeLogin();
+
+    } catch (error) {
+        console.error("Auth Error:", error);
+        if (error.code === 'auth/email-already-in-use') showToast("Email already in use.", "error");
+        else if (error.code === 'auth/weak-password') showToast("Password must be at least 6 characters.", "error");
+        else showToast("Authentication failed.", "error");
+    } finally {
+        btn.textContent = isLoginMode ? "Secure Log In" : "Create Account";
+        btn.disabled = false;
+    }
+}
+
+window.signInWithGoogle = async function() {
+    try {
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+        
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+            currentRole = userDoc.data().role;
+            showToast(`Welcome back! Logged in as ${currentRole}.`, "success");
+        } else {
+            currentRole = 'student';
+            await setDoc(userDocRef, { email: user.email, role: 'student' });
+            showToast("Student account created via Google!", "success");
+        }
+        
+        finalizeLogin();
+
+    } catch (error) {
+        console.error("Google Auth Error:", error);
+        if (error.code !== 'auth/popup-closed-by-user') showToast("Failed to sign in with Google.", "error");
+    }
+}
+
+function finalizeLogin() {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-screen').classList.remove('hidden');
+    
+    if (currentRole === 'teacher') document.getElementById('upload-panel').classList.remove('hidden');
+    else document.getElementById('upload-panel').classList.add('hidden');
+    
+    document.getElementById('auth-email').value = '';
+    document.getElementById('auth-password').value = '';
+    document.getElementById('teacher-code').value = '';
+    
+    document.getElementById('search-bar').value = '';
+    document.getElementById('category-filter').value = 'All';
+    renderNotes();
+}
+
+window.logout = async function() {
+    try {
+        await signOut(auth);
+    } catch (error) {
+        console.error("Error signing out:", error);
+    }
+    document.getElementById('app-screen').classList.add('hidden');
+    document.getElementById('login-screen').classList.remove('hidden');
+    currentRole = 'student';
+    showToast("Logged out securely.", "info");
+}
+
 async function fetchNotes() {
     try {
-        const querySnapshot = await getDocs(collection(db, "studyHubNotes"));
-        notes = []; // Clear current array before loading new data
+        const q = query(collection(db, "studyHubNotes"), orderBy("timestamp", "desc"));
+        const querySnapshot = await getDocs(q);
         
-        querySnapshot.forEach((doc) => {
-            // Push the document data AND its unique Firebase ID
-            notes.push({ id: doc.id, ...doc.data() }); 
-        });
-        
-        applyFilters(); // Render the notes after fetching
-    } catch (error) {
-        console.error("Error fetching notes: ", error);
-        document.getElementById('notes-container').innerHTML = '<p>Error loading repository. Check your connection.</p>';
-    }
-    async function fetchNotes() {
-    try {
-        const querySnapshot = await getDocs(collection(db, "studyHubNotes"));
-        notes = []; 
+        notes = [];
         
         querySnapshot.forEach((doc) => {
             notes.push({ id: doc.id, ...doc.data() }); 
         });
-
-        // Optional: If Firebase is empty, load the default policies just for viewing
-        if (notes.length === 0) {
-            notes = [...defaultNotes];
-        }
         
         applyFilters(); 
     } catch (error) {
         console.error("Error fetching notes: ", error);
         document.getElementById('notes-container').innerHTML = '<p>Error loading repository. Check your connection.</p>';
     }
-    }
 }
 
-// 5. Core Rendering Function 
 function renderNotes(dataToRender = notes) {
     const container = document.getElementById('notes-container');
     container.innerHTML = '';
     
     if (dataToRender.length === 0) {
-        container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">No resources found. Log in as an Admin to upload the first note!</p>';
+        container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">No resources found.</p>';
         return;
     }
 
     dataToRender.forEach((note) => {
-        // Only render the delete button if the user is a teacher
+        let dateDisplay = "Date Unknown";
+        if (note.timestamp) {
+            const dateObj = new Date(note.timestamp);
+            dateDisplay = dateObj.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+        }
+
+        const isFav = favorites.includes(note.id);
+        const starIcon = isFav ? '⭐' : '☆';
+        const favBtn = `<button class="btn-icon fav-btn" onclick="toggleFavorite('${note.id}')" title="Toggle Favorite">${starIcon}</button>`;
+
+        const editBtn = currentRole === 'teacher' 
+            ? `<button class="btn-warning" onclick="editNote('${note.id}')">Edit</button>` 
+            : '';
+            
         const deleteBtn = currentRole === 'teacher' 
             ? `<button class="btn-danger" onclick="deleteNote('${note.id}')">Delete</button>` 
             : '';
 
         container.innerHTML += `
             <div class="note-card">
-                <div class="note-header">
-                    <span class="tag">${note.category}</span>
-                    <strong>${note.title}</strong>
+                <div class="note-header" style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <span class="tag">${note.category}</span>
+                        <strong style="display: block; margin-top: 8px;">${note.title}</strong>
+                        <span class="note-date">Uploaded: ${dateDisplay}</span>
+                    </div>
+                    ${favBtn}
                 </div>
                 <div class="card-actions">
                     <a href="${note.link}" target="_blank" class="btn-view">View Resource</a>
-                    ${deleteBtn}
+                    ${editBtn}  ${deleteBtn}
                 </div>
             </div>
         `;
     });
 }
 
-// 6. Add a New Note to Firebase
 window.addNote = async function() {
     const title = document.getElementById('note-title').value.trim();
     const link = document.getElementById('note-link').value.trim();
     const category = document.getElementById('note-category').value;
 
     if (title && link) {
-        // Provide visual feedback while uploading
-        const btn = document.querySelector('.btn-success');
-        btn.textContent = "Uploading...";
+        const btn = document.getElementById('submit-btn');
+        btn.textContent = "Saving...";
         btn.disabled = true;
 
         try {
-            await addDoc(collection(db, "studyHubNotes"), {
-                title: title,
-                link: link,
-                category: category
-            });
+            if (editingId) {
+                const noteRef = doc(db, "studyHubNotes", editingId);
+                await updateDoc(noteRef, {
+                    title: title,
+                    link: link,
+                    category: category
+                });
+            } else {
+                await addDoc(collection(db, "studyHubNotes"), {
+                    title: title,
+                    link: link,
+                    category: category,
+                    timestamp: Date.now() 
+                });
+            }
             
-            // Clear inputs on success
-            document.getElementById('note-title').value = '';
-            document.getElementById('note-link').value = '';
+            window.cancelEdit();
+            fetchNotes();
+            showToast("Note saved successfully!", "success");
             
-            // Re-fetch to update the screen instantly
-            fetchNotes(); 
         } catch (e) {
-            console.error("Error adding document: ", e);
-            alert("Failed to upload note. Check console for details.");
+            console.error("Error saving document: ", e);
+            showToast("Failed to save note.", "error");
         } finally {
-            // Reset button
-            btn.textContent = "Post Note";
             btn.disabled = false;
         }
     } else {
-        alert("Please provide both a title and a link.");
+        showToast("Please provide both a title and a link.", "error");
     }
 }
 
-// 7. Delete a Note from Firebase
+window.editNote = function(id) {
+    const noteToEdit = notes.find(n => n.id === id);
+    if (!noteToEdit) return;
+    
+    document.getElementById('note-title').value = noteToEdit.title;
+    document.getElementById('note-link').value = noteToEdit.link;
+    document.getElementById('note-category').value = noteToEdit.category;
+    
+    editingId = id;
+    
+    document.getElementById('submit-btn').textContent = "Update Note";
+    document.getElementById('cancel-edit-btn').classList.remove('hidden');
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+window.cancelEdit = function() {
+    editingId = null;
+    document.getElementById('note-title').value = '';
+    document.getElementById('note-link').value = '';
+    
+    document.getElementById('submit-btn').textContent = "Post Note";
+    document.getElementById('cancel-edit-btn').classList.add('hidden');
+}
+
 window.deleteNote = async function(id) {
     if (confirm("Are you sure you want to remove this resource permanently?")) {
         try {
             await deleteDoc(doc(db, "studyHubNotes", id));
-            fetchNotes(); // Re-fetch to update the screen
+            fetchNotes();
+            showToast("Note deleted permanently.", "info");
         } catch (e) {
             console.error("Error deleting document: ", e);
-            alert("Failed to delete note.");
+            showToast("Failed to delete note.", "error");
         }
     }
 }
 
-// 8. Compound Filtering (Search + Category)
+window.toggleFavorite = function(id) {
+    if (favorites.includes(id)) {
+        favorites = favorites.filter(favId => favId !== id);
+    } else {
+        favorites.push(id);
+    }
+    localStorage.setItem('studyHubFavorites', JSON.stringify(favorites));
+    applyFilters(); 
+}
+
 window.applyFilters = function() {
     const searchQuery = document.getElementById('search-bar').value.toLowerCase();
     const selectedCategory = document.getElementById('category-filter').value;
 
     const filteredNotes = notes.filter(note => {
         const matchesSearch = note.title.toLowerCase().includes(searchQuery);
-        const matchesCategory = selectedCategory === "All" || note.category === selectedCategory;
+        
+        let matchesCategory = false;
+        if (selectedCategory === "All") {
+            matchesCategory = true;
+        } else if (selectedCategory === "Favorites") {
+            matchesCategory = favorites.includes(note.id);
+        } else {
+            matchesCategory = note.category === selectedCategory;
+        }
+        
         return matchesSearch && matchesCategory;
     });
 
     renderNotes(filteredNotes);
 }
 
-// 9. Role & Authentication Mock
+window.showToast = function(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300); 
+    }, 3000);
+}
+
 window.handleLogin = function(role) {
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const uploadPanel = document.getElementById('upload-panel');
     
     if (role === 'teacher') {
-        // Require password for Admin
         if (prompt("Enter Admin Password:") === "Admin123") { 
             currentRole = 'teacher';
+            showToast("Welcome, Admin!", "success");
             uploadPanel.classList.remove('hidden');
         } else {
-            alert("Incorrect Password!");
-            return; // Stop here, do not let them in
+            showToast("Incorrect Password!", "error");
+            return;
         }
     } else {
-        // Let students straight in
         currentRole = 'student';
         uploadPanel.classList.add('hidden');
     }
     
-    // Hide the login screen, show the main app
     loginScreen.classList.add('hidden');
     appScreen.classList.remove('hidden');
-    
-    // Reset the search bar/filters and render the fresh notes
     document.getElementById('search-bar').value = '';
     document.getElementById('category-filter').value = 'All';
     renderNotes(); 
 }
 
 window.logout = function() {
-    // Hide the main app, show the login screen
     document.getElementById('app-screen').classList.add('hidden');
     document.getElementById('login-screen').classList.remove('hidden');
-    
-    // Reset role to student for security
     currentRole = 'student';
 }
 
-// 10. Dark Mode Toggle (Updated for dual buttons)
 window.toggleDarkMode = function() {
     const body = document.documentElement;
     const currentTheme = body.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     body.setAttribute('data-theme', newTheme);
     
-    // Determine which icon to show
     const themeIcon = newTheme === 'dark' ? '☀️' : '🌙';
     
-    // Update the App Navigation button
     const navBtn = document.getElementById('theme-toggle');
     if (navBtn) navBtn.textContent = themeIcon;
     
-    // Update the Login Screen button
     const loginBtn = document.getElementById('theme-toggle-login');
     if (loginBtn) loginBtn.textContent = themeIcon;
 }
 
-
-// Initialize App: Fetch live data as soon as the script loads
 fetchNotes();

@@ -293,12 +293,7 @@ window.fetchSubjects = async function() {
                 deleteSelect.add(new Option(subjectName, subjectId));
             }
         });
-    }
-    catch (error) {
-        console.error("Error fetching subjects:", error);
-    }
-}
-catch (error) {
+    } catch (error) {
         console.error("Error fetching subjects:", error);
     }
 }
@@ -396,4 +391,5 @@ window.toggleDarkMode = function() {
     if (loginBtn) loginBtn.textContent = themeIcon;
 }
 fetchNotes();
+
 

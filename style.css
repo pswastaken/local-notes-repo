@@ -30,7 +30,7 @@ body {
 }
 
 #login-screen {
-    background-image: url('image_0.png');
+    background-image: url('background.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -247,3 +247,4 @@ main {
 .toast-success { background-color: var(--success-color, #28a745); }
 .toast-error { background-color: var(--danger-color, #ff4d4d); }
 .toast-info { background-color: var(--primary-color, #007bff); }
+

@@ -49,7 +49,7 @@
             <div class="nav-controls">
                 <input type="text" id="search-bar" placeholder="Search notes..." onkeyup="applyFilters()">
                 
-                <select id="category-filter" onchange="filterNotes()" style="padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                <select id="category-filter" onchange="renderNotes()" style="padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
                     <option value="All">All Subjects</option>
                     <option value="Favorites">⭐ My Favorites</option>
                     <option value="Course Policies">Course Policies</option>
@@ -111,6 +111,7 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
 
 
 

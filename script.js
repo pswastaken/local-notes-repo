@@ -277,21 +277,28 @@ window.fetchSubjects = async function() {
         const filterSelect = document.getElementById('category-filter');
         const uploadSelect = document.getElementById('note-category');
         const deleteSelect = document.getElementById('delete-subject-select');
-        filterSelect.innerHTML = '<option value="All">All Subjects</option>';
-        uploadSelect.innerHTML = '';
-        if (deleteSelect) deleteSelect.innerHTML = '';
+        filterSelect.options.length = 0;
+        uploadSelect.options.length = 0;
+        if (deleteSelect) deleteSelect.options.length = 0;
+        filterSelect.add(new Option("All Subjects", "All"));
+        filterSelect.add(new Option("⭐ My Favorites", "Favorites"));
         querySnapshot.forEach((doc) => {
             const subjectName = doc.data().name;
-            const subjectId = doc.id;
-            filterSelect.innerHTML = '<option value="All">All Subjects</option><option value="Favorites">⭐ My Favorites</option>';
-            filterSelect.innerHTML += `<option value="${subjectName}">${subjectName}</option>`;
-            uploadSelect.innerHTML += `<option value="${subjectName}">${subjectName}</option>`;
+            const subjectId = doc.id; 
+            
+            filterSelect.add(new Option(subjectName, subjectName));
+            uploadSelect.add(new Option(subjectName, subjectName));
+            
             if (deleteSelect) {
-                deleteSelect.innerHTML += `<option value="${subjectId}">${subjectName}</option>`;
+                deleteSelect.add(new Option(subjectName, subjectId));
             }
         });
     }
     catch (error) {
+        console.error("Error fetching subjects:", error);
+    }
+}
+catch (error) {
         console.error("Error fetching subjects:", error);
     }
 }
@@ -389,3 +396,4 @@ window.toggleDarkMode = function() {
     if (loginBtn) loginBtn.textContent = themeIcon;
 }
 fetchNotes();
+

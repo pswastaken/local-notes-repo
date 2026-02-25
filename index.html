@@ -49,7 +49,7 @@
             <div class="nav-controls">
                 <input type="text" id="search-bar" placeholder="Search notes..." onkeyup="applyFilters()">
                 
-                <select id="category-filter" onchange="applyFilters()">
+                <select id="category-filter" onchange="filterNotes()" style="padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
                     <option value="All">All Subjects</option>
                     <option value="Favorites">⭐ My Favorites</option>
                     <option value="Course Policies">Course Policies</option>
@@ -67,11 +67,25 @@
 
         <main>
             <section id="upload-panel" class="hidden">
+            <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #ddd;">
+                <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: var(--text-color);">Manage Subjects</h3>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="new-subject-name" placeholder="New Subject Name" style="flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+                    <button class="btn-success" style="padding: 10px 15px;" onclick="addSubject()">Add</button>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <select id="delete-subject-select" style="flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+                        </select>
+                    <button class="btn-danger" style="padding: 10px 15px;" onclick="deleteSubject()">Remove</button>
+                </div>
+            </div>
                 <h2>Add New Resource</h2>
                 <div class="upload-grid">
                     <input type="text" id="note-title" placeholder="Title (e.g., Wave Optics Guide)">
                     <input type="text" id="note-link" placeholder="Link to PDF/Drive">
-                    <select id="note-category">
+                    <select id="note-category" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
                         <option value="Course Policies">Course Policies</option>
                         <option value="LADE">LADE</option>
                         <option value="Quantum Physics">Quantum Physics</option>
@@ -97,6 +111,7 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
 
 
 

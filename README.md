@@ -1,24 +1,39 @@
-# StudyHub: Cloud-Connected Student Repository
-**Overview**
-StudyHub is a responsive, web-based platform designed to centralize and share academic resources, course policies, and study notes. Built with a focus on usability and real-time collaboration, the application serves as a shared digital library where authorized users can upload materials, and students can easily search and access them from any device.
+# PadhaiHub: Cloud-Connected Student Repository 📚
 
-**Key Features**
-Role-Based Access Control (Gateway Pattern): Features a dedicated login screen that routes users based on their role. "Students" receive immediate, view-only access to the repository, while "Admins" (teachers or designated uploaders) must authenticate with a password to access the hidden upload and deletion controls.
+PadhaiHub is a secure, responsive, full-stack web application designed to centralize and share academic resources for subjects like LADE, Quantum Physics, Product Realization, Web Development, and BEEE. Built with HTML, CSS, Vanilla JavaScript, and Google Firebase, it serves as a real-time collaborative digital library with role-based access control.
 
-**Live Cloud Database Synchronization**: Integrated with Google Firebase (Cloud Firestore) via ES Modules. Any newly added resource or deletion is instantly updated and synced across all users' browsers in real-time.
+### 🌐 **[View Live Project Here](https://pswastaken.github.io/local-notes-repo/)**
 
-**Cost-Effective File Management**: Designed to bypass expensive cloud storage limits by utilizing a direct-link system. Admins can host heavy files (PDFs, PPTs, code files) on free services like Google Drive and seamlessly link them into the repository.
+## ✨ Key Features
 
-**Compound Search & Filtering**: A highly efficient dual-filter system allows students to search by text (title) and filter by specific academic categories simultaneously.
+### 🔐 Secure Authentication & Role Management
+* **Multi-Provider Login:** Users can securely log in via Email/Password or instantly authenticate using **Google Sign-In**.
+* **Role-Based Access Control (RBAC):** * **Students:** Default view-only access to browse, search, and favorite materials.
+  * **Teachers/Admins:** Secure access to a hidden portal for uploading, editing, and deleting resources.
+* **Protected Registration:** Upgrading to a Teacher account requires a secret authorization code during sign-up to prevent unauthorized access.
 
-**Customized Curriculum Categories**: The repository is pre-configured to support specific coursework, including Course Policies, Linear Algebra and Differential Equations (LADE), Quantum Physics, Product Realization, Web Development, and BEEE.
+### 🗄️ Real-Time Database (CRUD)
+* **Firestore Integration:** Powered by Firebase Cloud Firestore, the database syncs instantly across all devices without requiring page reloads.
+* **Full CRUD Functionality:** Admins can **C**reate new resource links, **R**ead the database, **U**pdate existing entries to fix typos, and **D**elete outdated files.
+* **Smart Sorting:** Notes are automatically stamped with the exact millisecond of upload and sorted to display the newest resources first.
 
-**Persistent UI/UX**: Features a clean, modern interface utilizing CSS Grid and Flexbox, complete with a globally synced Dark Mode toggle for late-night study sessions.
+### 🎯 Personalized User Experience
+* **"⭐ My Favorites" System:** Students can star specific derivations, formulas, or study guides. These preferences are saved locally to their browser via `localStorage` for quick access across sessions.
+* **Dynamic Search & Filter:** A dual-filter system allows students to instantly search by title or filter by specific subject categories.
+* **Custom Toast Notifications:** Clunky native browser alerts have been replaced with a sleek, custom sliding toast notification system for immediate feedback (Success, Error, Info).
 
-**Tech Stack**
+### 🎨 Modern UI/UX
+* **Adaptive Dark Mode:** A globally synced Dark Mode toggle for comfortable reading, ensuring all dynamic elements adapt automatically.
+* **Focused Landing Page:** A clean, distraction-free login screen featuring a custom library background that hides itself once the user enters the main workspace.
 
-**Frontend**: HTML5, CSS3 (Native Variables), JavaScript
+---
 
-**Backend/Database**: Google Firebase (Cloud Firestore NoSQL Database)
-
-**Architecture**: Client-Server model using ES6 Modules and asynchronous JavaScript (async/await).
+## 🛠️ Tech Stack
+* **Frontend:** HTML5, CSS3 (Grid/Flexbox, CSS Variables), Vanilla JavaScript (ES6 Modules)
+* **Backend as a Service (BaaS):** Google Firebase
+  * **Firebase Authentication:** Managing user sessions and secure logins.
+  * **Cloud Firestore:** NoSQL real-time document database.
+  * **Firestore Security Rules:** Custom server-side rules preventing unauthorized writes or tampering.
+1. Clone the repository: 
+   ```bash
+   git clone [https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git)

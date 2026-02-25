@@ -19,12 +19,23 @@
 }
 
 body {
+    margin: 0;
+    background-color: var(--bg-color);
     font-family: 'Segoe UI', system-ui, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
     padding: 0;
     transition: background-color 0.3s, color 0.3s;
+}
+
+#login-screen {
+    background-image: url('image_0.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 100vh;
+    width: 100%;
 }
 
 nav {
@@ -145,7 +156,7 @@ main {
     text-align: center;
     flex: 1;
 }
-/* --- LOGIN SCREEN STYLES --- */
+
 .login-container {
     display: flex;
     justify-content: center;
@@ -163,11 +174,76 @@ main {
     border: 1px solid var(--border-color);
     width: 100%;
     max-width: 350px;
+    background-color: var(--card-bg);
+    backdrop-filter: blur(5px);
 }
-/* Positions the theme button on the login screen */
+
 .login-theme-btn {
     position: absolute;
     top: 20px;
     right: 20px;
     font-size: 1.5rem;
 }
+
+.fav-btn {
+    color: var(--text-color);
+    font-size: 1.4rem;
+    border: none;
+    transition: transform 0.2s ease;
+}
+
+.fav-btn:hover {
+    transform: scale(1.2); 
+}
+
+.note-date {
+    display: block;
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 5px;
+}
+
+.btn-warning { 
+    background-color: #ffc107; 
+    color: #333; 
+    border: none;
+    border-radius: 4px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-warning:hover { 
+    background-color: #e0a800; 
+}
+
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 9999;
+}
+
+.toast {
+    min-width: 250px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateX(120%); 
+    opacity: 0;
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.toast-success { background-color: var(--success-color, #28a745); }
+.toast-error { background-color: var(--danger-color, #ff4d4d); }
+.toast-info { background-color: var(--primary-color, #007bff); }

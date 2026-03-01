@@ -23,7 +23,8 @@ let notes = [];
 let currentRole = 'student'; 
 let favorites = JSON.parse(localStorage.getItem('studyHubFavorites')) || [];
 let editingId = null;
-let isLoginMode = true; 
+let pendingGoogleUser = null;
+let isLoginMode = true;
 const SECRET_TEACHER_CODE = "ADMIN0011";
 
 window.switchAuthMode = function(mode) {
@@ -99,19 +100,64 @@ window.signInWithGoogle = async function() {
         const user = result.user;       
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
+
         if (userDoc.exists()) {
             currentRole = userDoc.data().role;
             showToast(`Welcome back! Logged in as ${currentRole}.`, "success");
+            finalizeLogin();
         } else {
-            currentRole = 'student';
-            await setDoc(userDocRef, { email: user.email, role: 'student' });
-            showToast("Student account created via Google!", "success");
+            pendingGoogleUser = user; 
+            document.getElementById('login-main-section').classList.add('hidden');
+            document.getElementById('google-role-section').classList.remove('hidden');
         }
-        finalizeLogin();
     } catch (error) {
         console.error("Google Auth Error:", error);
         if (error.code !== 'auth/popup-closed-by-user') showToast("Failed to sign in with Google.", "error");
     }
+}
+
+window.checkGoogleRole = function() {
+    const role = document.getElementById('google-role').value;
+    if (role === 'teacher') {
+        document.getElementById('google-teacher-code').classList.remove('hidden');
+    } else {
+        document.getElementById('google-teacher-code').classList.add('hidden');
+    }
+}
+
+window.finalizeGoogleSignup = async function() {
+    if (!pendingGoogleUser) return;
+    
+    const role = document.getElementById('google-role').value;
+    const enteredCode = document.getElementById('google-teacher-code').value;
+
+    if (role === 'teacher' && enteredCode !== SECRET_TEACHER_CODE) {
+        showToast("Invalid Admin Secret Code.", "error");
+        return;
+    }
+
+    try {
+        const userDocRef = doc(db, "users", pendingGoogleUser.uid);
+        await setDoc(userDocRef, { email: pendingGoogleUser.email, role: role });
+        
+        currentRole = role;
+        showToast(`${role === 'teacher' ? 'Admin' : 'Student'} account created!`, "success");
+        
+        cancelGoogleSignup(); 
+        finalizeLogin();
+    } catch (error) {
+        console.error("Error saving Google user role:", error);
+        showToast("Failed to complete setup.", "error");
+    }
+}
+
+window.cancelGoogleSignup = function() {
+    pendingGoogleUser = null;
+    document.getElementById('google-role-section').classList.add('hidden');
+    document.getElementById('login-main-section').classList.remove('hidden');
+    document.getElementById('google-role').value = 'student';
+    document.getElementById('google-teacher-code').classList.add('hidden');
+    document.getElementById('google-teacher-code').value = '';
 }
 
 function finalizeLogin() {

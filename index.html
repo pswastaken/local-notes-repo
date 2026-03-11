@@ -32,7 +32,7 @@
                         <option value="student">I am a Student</option>
                         <option value="teacher">I am a Teacher</option>
                     </select>
-                    <input type="password" id="teacher-code" class="hidden" placeholder="Teacher Secret Code (e.g., ADMIN0011)" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+                    <input type="password" id="teacher-code" class="hidden" placeholder="Teacher Secret Code" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
                 </div>
 
                 <button id="auth-submit-btn" class="btn-success" style="width: 100%;" onclick="processAuth()">Secure Log In</button>
@@ -92,7 +92,7 @@
 
                 <div style="padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
                     <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: var(--text-color);">Make an Announcement</h3>  
-                    <textarea id="announcement-text" placeholder="Type your announcement here... (e.g., Tomorrow's lecture is canceled)" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); box-sizing: border-box; margin-bottom: 10px; resize: vertical; min-height: 80px; background-color: var(--bg-color); color: var(--text-color);"></textarea>
+                    <textarea id="announcement-text" placeholder="Type your announcement here..." style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); box-sizing: border-box; margin-bottom: 10px; resize: vertical; min-height: 80px; background-color: var(--bg-color); color: var(--text-color);"></textarea>
                     <button class="btn-primary" onclick="postAnnouncement()">Broadcast to Students</button>
                 </div>
             
@@ -113,7 +113,7 @@
                 
                 <h2 style="margin-top: 20px;">Add New Resource</h2>
                 <div class="upload-grid">
-                    <input type="text" id="note-title" placeholder="Title (e.g., Wave Optics Guide)" style="flex: 1;">
+                    <input type="text" id="note-title" placeholder="Title" style="flex: 1;">
                     <input type="text" id="note-link" placeholder="Link to PDF/Drive" style="flex: 1;">
                     <select id="note-category" style="padding: 10px; border-radius: 4px; border: 1px solid var(--border-color);">
                         </select>
@@ -134,3 +134,4 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+

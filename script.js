@@ -163,15 +163,24 @@ window.cancelGoogleSignup = function() {
 function finalizeLogin() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-screen').classList.remove('hidden');   
-    if (currentRole === 'teacher') document.getElementById('upload-panel').classList.remove('hidden');
-    else document.getElementById('upload-panel').classList.add('hidden');
+    
+    if (currentRole === 'teacher') {
+        document.getElementById('upload-panel').classList.remove('hidden');
+        document.getElementById('notification-wrapper').classList.add('hidden');
+    } else {
+        document.getElementById('upload-panel').classList.add('hidden');
+        document.getElementById('notification-wrapper').classList.remove('hidden');
+    }
+    
     document.getElementById('auth-email').value = '';
     document.getElementById('auth-password').value = '';
     document.getElementById('teacher-code').value = '';
     document.getElementById('search-bar').value = '';
     document.getElementById('category-filter').value = 'All';
+    
     fetchSubjects();
-    renderNotes();
+    fetchNotes();
+    fetchAnnouncements();
 }
 
 window.logout = async function() {
@@ -436,6 +445,84 @@ window.toggleDarkMode = function() {
     if (navBtn) navBtn.textContent = themeIcon;
     const loginBtn = document.getElementById('theme-toggle-login');
     if (loginBtn) loginBtn.textContent = themeIcon;
+}
+
+let announcements = [];
+
+window.postAnnouncement = async function() {
+    const text = document.getElementById('announcement-text').value.trim();
+    if (!text) {
+        showToast("Please type an announcement first.", "error");
+        return;
+    }
+    try {
+        await addDoc(collection(db, "announcements"), {
+            text: text,
+            timestamp: Date.now()
+        });
+        document.getElementById('announcement-text').value = '';
+        showToast("Announcement broadcasted!", "success");
+        fetchAnnouncements();
+    } catch (e) {
+        console.error("Error posting announcement:", e);
+        showToast("Failed to post announcement.", "error");
+    }
+}
+
+window.fetchAnnouncements = async function() {
+    try {
+        const q = query(collection(db, "announcements"), orderBy("timestamp", "desc"));
+        const querySnapshot = await getDocs(q);
+        announcements = [];
+        querySnapshot.forEach((doc) => {
+            announcements.push({ id: doc.id, ...doc.data() });
+        });
+        renderAnnouncements();
+    } catch (e) {
+        console.error("Error fetching announcements:", e);
+    }
+}
+
+window.renderAnnouncements = function() {
+    const list = document.getElementById('announcements-list');
+    const badge = document.getElementById('notification-badge');
+    list.innerHTML = '';
+
+    if (announcements.length === 0) {
+        list.innerHTML = '<p style="color: #888; font-size: 0.9rem; text-align: center; margin-top: 10px;">No announcements yet.</p>';
+        badge.classList.add('hidden');
+        return;
+    }
+
+    const lastSeen = localStorage.getItem('studyHubLastSeenAnnouncement') || 0;
+    const latestTimestamp = announcements[0].timestamp;
+    
+    if (latestTimestamp > lastSeen && currentRole === 'student') {
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+
+    announcements.forEach(a => {
+        const dateObj = new Date(a.timestamp);
+        const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        list.innerHTML += `
+            <div class="announcement-item">
+                <div>${a.text}</div>
+                <span class="announcement-date">${dateStr}</span>
+            </div>
+        `;
+    });
+}
+
+window.toggleAnnouncements = function() {
+    const dropdown = document.getElementById('announcements-dropdown');
+    dropdown.classList.toggle('hidden');
+    
+    if (!dropdown.classList.contains('hidden') && announcements.length > 0) {
+        localStorage.setItem('studyHubLastSeenAnnouncement', announcements[0].timestamp);
+        document.getElementById('notification-badge').classList.add('hidden');
+    }
 }
 
 fetchNotes();

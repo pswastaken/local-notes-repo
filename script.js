@@ -25,7 +25,14 @@ let favorites = JSON.parse(localStorage.getItem('studyHubFavorites')) || [];
 let editingId = null;
 let pendingGoogleUser = null;
 let isLoginMode = true;
-const SECRET_TEACHER_CODE = "ADMIN0011";
+const SECRET_TEACHER_CODE = "e44a4f899c7595ab355e14b2d56d11b225916021d603a1fc6c5267027d111005";
+
+async function hashInput(password) {
+    const msgBuffer = new TextEncoder().encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 window.switchAuthMode = function(mode) {
     isLoginMode = mode === 'login';
@@ -60,11 +67,14 @@ window.processAuth = async function() {
         if (!isLoginMode) {
             const role = document.getElementById('auth-role').value;
             const enteredCode = document.getElementById('teacher-code').value;
-            if (role === 'teacher' && enteredCode !== SECRET_TEACHER_CODE) {
-                showToast("Invalid Teacher Secret Code.", "error");
-                btn.textContent = "Create Account";
-                btn.disabled = false;
-                return;
+            if (role === 'teacher') {
+                const hashedInput = await hashInput(enteredCode);
+                if (hashedInput !== SECRET_TEACHER_HASH) {
+                    showToast("Invalid Teacher Secret Code.", "error");
+                    btn.textContent = "Create Account";
+                    btn.disabled = false;
+                    return;
+                }
             }
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
@@ -131,9 +141,12 @@ window.finalizeGoogleSignup = async function() {
     const role = document.getElementById('google-role').value;
     const enteredCode = document.getElementById('google-teacher-code').value;
 
-    if (role === 'teacher' && enteredCode !== SECRET_TEACHER_CODE) {
-        showToast("Invalid Admin Secret Code.", "error");
-        return;
+    if (role === 'teacher') {
+        const hashedInput = await hashInput(enteredCode);
+        if (hashedInput !== SECRET_TEACHER_HASH) {
+            showToast("Invalid Admin Secret Code.", "error");
+            return;
+        }
     }
 
     try {
@@ -213,8 +226,15 @@ async function fetchNotes() {
 function renderNotes(dataToRender = notes) {
     const container = document.getElementById('notes-container');
     container.innerHTML = '';   
+    
     if (dataToRender.length === 0) {
-        container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">No resources found.</p>';
+        const selectedSemester = document.getElementById('semester-filter').value;
+
+        if (selectedSemester !== "All") {
+            container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; font-style: italic; color: #888;">To be uploaded soon...</p>';
+        } else {
+            container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">No resources found.</p>';
+        }
         return;
     }
     dataToRender.forEach((note) => {
@@ -259,6 +279,23 @@ window.addNote = async function() {
     const title = document.getElementById('note-title').value.trim();
     const link = document.getElementById('note-link').value.trim();
     const category = document.getElementById('note-category').value;
+    const semester = document.getElementById('note-semester').value;
+
+    await updateDoc(noteRef, {
+        title: title,
+        link: link,
+        category: category,
+        semester: semester
+    });
+
+    await addDoc(collection(db, "studyHubNotes"), {
+        title: title,
+        link: link,
+        category: category,
+        semester: semester,
+        timestamp: Date.now() 
+    });
+
     if (title && link) {
         const btn = document.getElementById('submit-btn');
         btn.textContent = "Saving...";
@@ -300,6 +337,7 @@ window.editNote = function(id) {
     if (!noteToEdit) return;   
     document.getElementById('note-title').value = noteToEdit.title;
     document.getElementById('note-link').value = noteToEdit.link;
+    document.getElementById('note-semester').value = noteToEdit.semester || "Semester 2";
     document.getElementById('note-category').value = noteToEdit.category;
     editingId = id;
     document.getElementById('submit-btn').textContent = "Update Note";
@@ -405,8 +443,11 @@ window.toggleFavorite = function(id) {
 window.applyFilters = function() {
     const searchQuery = document.getElementById('search-bar').value.toLowerCase();
     const selectedCategory = document.getElementById('category-filter').value;
+    const selectedSemester = document.getElementById('semester-filter').value;
+
     const filteredNotes = notes.filter(note => {
         const matchesSearch = note.title.toLowerCase().includes(searchQuery);   
+        
         let matchesCategory = false;
         if (selectedCategory === "All") {
             matchesCategory = true;
@@ -415,8 +456,13 @@ window.applyFilters = function() {
         } else {
             matchesCategory = note.category === selectedCategory;
         }
-        return matchesSearch && matchesCategory;
+
+        const noteSemester = note.semester || "Semester 2";
+        const matchesSemester = selectedSemester === "All" || noteSemester === selectedSemester;
+
+        return matchesSearch && matchesCategory && matchesSemester;
     });
+    
     renderNotes(filteredNotes);
 }
 

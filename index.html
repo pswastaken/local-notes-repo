@@ -69,6 +69,20 @@
             <div class="nav-controls">
                 <input type="text" id="search-bar" placeholder="Search notes..." onkeyup="applyFilters()">      
                 
+                <select id="semester-filter" onchange="applyFilters()" style="padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-right: 10px;">
+                    <option value="All">All Semesters</option>
+                    <option value="Semester 1">Semester 1</option>
+                    <option value="Semester 2">Semester 2</option>
+                    <option value="Semester 3">Semester 3</option>
+                    <option value="Semester 4">Semester 4</option>
+                    <option value="Semester 5">Semester 5</option>
+                    <option value="Semester 6">Semester 6</option>
+                    <option value="Semester 7">Semester 7</option>
+                    <option value="Semester 8">Semester 8</option>
+                    <option value="Semester 9">Semester 9</option>
+                    <option value="Semester 10">Semester 10</option>
+                </select>
+
                 <select id="category-filter" onchange="applyFilters()" style="padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
                     </select>
 
@@ -89,6 +103,19 @@
 
         <main>
             <section id="upload-panel" class="hidden">
+
+                <select id="note-semester" style="padding: 10px; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <option value="Semester 1">Semester 1</option>
+                    <option value="Semester 2">Semester 2</option>
+                    <option value="Semester 3">Semester 3</option>
+                    <option value="Semester 4">Semester 4</option>
+                    <option value="Semester 5">Semester 5</option>
+                    <option value="Semester 6">Semester 6</option>
+                    <option value="Semester 7">Semester 7</option>
+                    <option value="Semester 8">Semester 8</option>
+                    <option value="Semester 9">Semester 9</option>
+                    <option value="Semester 10">Semester 10</option>
+                </select>
 
                 <div style="padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
                     <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: var(--text-color);">Make an Announcement</h3>  
@@ -134,4 +161,3 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
-

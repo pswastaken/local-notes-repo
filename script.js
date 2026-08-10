@@ -38,6 +38,7 @@ async function hashInput(password) {
 window.switchAuthMode = function(mode) {
     isLoginMode = mode === 'login';
     document.getElementById('signup-extras').classList.toggle('hidden', isLoginMode);
+    document.getElementById('forgot-password-wrap').classList.toggle('hidden', !isLoginMode); // Hides on Sign Up, shows on Log In
     document.getElementById('auth-submit-btn').textContent = isLoginMode ? "Secure Log In" : "Create Account";
     document.getElementById('auth-subtitle').textContent = isLoginMode ? "Welcome back! Please log in." : "Create a new account.";
     document.getElementById('tab-login').className = isLoginMode ? 'btn-primary' : 'btn-view';
@@ -55,17 +56,28 @@ window.checkRole = function() {
 }
 
 window.processAuth = async function() {
-    const email = document.getElementById('auth-email').value;
+    const email = document.getElementById('auth-email').value.trim();
     const password = document.getElementById('auth-password').value;
+    
     if (!email || !password) {
         showToast("Please enter an email and password.", "error");
         return;
     }
+
     const btn = document.getElementById('auth-submit-btn');
     btn.textContent = "Processing...";
     btn.disabled = true;
+
     try {
         if (!isLoginMode) {
+            const confirmPassword = document.getElementById('auth-confirm-password').value;
+            if (password !== confirmPassword) {
+                showToast("Passwords do not match!", "error");
+                btn.textContent = "Create Account";
+                btn.disabled = false;
+                return;
+            }
+
             const role = document.getElementById('auth-role').value;
             const enteredCode = document.getElementById('teacher-code').value;
             if (role === 'teacher') {
@@ -251,7 +263,6 @@ function renderNotes(dataToRender = notes) {
     
     if (dataToRender.length === 0) {
         const selectedSemester = document.getElementById('semester-filter').value;
-
         if (selectedSemester !== "All") {
             container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; font-style: italic; color: #888;">To be uploaded soon...</p>';
         } else {
@@ -259,6 +270,7 @@ function renderNotes(dataToRender = notes) {
         }
         return;
     }
+
     dataToRender.forEach((note) => {
         let dateDisplay = "Date Unknown";
         if (note.timestamp) {
@@ -269,6 +281,8 @@ function renderNotes(dataToRender = notes) {
                 year: 'numeric' 
             });
         }
+        
+        const noteSemester = note.semester || "Semester 2"; // Fallback for existing notes
         const isFav = favorites.includes(note.id);
         const starIcon = isFav ? '⭐' : '☆';
         const favBtn = `<button class="btn-icon fav-btn" onclick="toggleFavorite('${note.id}')" title="Toggle Favorite">${starIcon}</button>`;
@@ -278,12 +292,16 @@ function renderNotes(dataToRender = notes) {
         const deleteBtn = currentRole === 'teacher' 
             ? `<button class="btn-danger" onclick="deleteNote('${note.id}')">Delete</button>` 
             : '';
+
         container.innerHTML += `
             <div class="note-card">
                 <div class="note-header" style="display: flex; justify-content: space-between; align-items: start;">
                     <div>
-                        <span class="tag">${note.category}</span>
-                        <strong style="display: block; margin-top: 8px;">${note.title}</strong>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px;">
+                            <span class="tag">${note.category}</span>
+                            <span class="tag" style="background-color: #6c757d;">${noteSemester}</span>
+                        </div>
+                        <strong style="display: block; margin-top: 4px;">${note.title}</strong>
                         <span class="note-date">Uploaded: ${dateDisplay}</span>
                     </div>
                     ${favBtn}

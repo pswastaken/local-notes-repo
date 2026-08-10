@@ -20,6 +20,7 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider(); 
 
 let notes = [];
+let allSubjects = [];
 let currentRole = 'student'; 
 let favorites = JSON.parse(localStorage.getItem('studyHubFavorites')) || [];
 let editingId = null;
@@ -338,6 +339,7 @@ window.editNote = function(id) {
     document.getElementById('note-title').value = noteToEdit.title;
     document.getElementById('note-link').value = noteToEdit.link;
     document.getElementById('note-semester').value = noteToEdit.semester || "Semester 2";
+    updateSubjectDropdowns();
     document.getElementById('note-category').value = noteToEdit.category;
     editingId = id;
     document.getElementById('submit-btn').textContent = "Update Note";
@@ -370,38 +372,69 @@ window.fetchSubjects = async function() {
     try {
         const q = query(collection(db, "subjects"), orderBy("name"));
         const querySnapshot = await getDocs(q);
-        const filterSelect = document.getElementById('category-filter');
-        const uploadSelect = document.getElementById('note-category');
-        const deleteSelect = document.getElementById('delete-subject-select');
-        filterSelect.options.length = 0;
-        uploadSelect.options.length = 0;
-        if (deleteSelect) deleteSelect.options.length = 0;
-        filterSelect.add(new Option("All Subjects", "All"));
-        filterSelect.add(new Option("⭐ My Favorites", "Favorites"));
+        
+        allSubjects = [];
         querySnapshot.forEach((doc) => {
-            const subjectName = doc.data().name;
-            const subjectId = doc.id; 
-            filterSelect.add(new Option(subjectName, subjectName));
-            uploadSelect.add(new Option(subjectName, subjectName));
-            if (deleteSelect) {
-                deleteSelect.add(new Option(subjectName, subjectId));
-            }
+            allSubjects.push({ id: doc.id, ...doc.data() });
         });
+        
+        updateSubjectDropdowns();
     } catch (error) {
         console.error("Error fetching subjects:", error);
     }
 }
 
+window.updateSubjectDropdowns = function() {
+    const filterSelect = document.getElementById('category-filter');
+    const uploadSelect = document.getElementById('note-category');
+    const deleteSelect = document.getElementById('delete-subject-select');    
+    const navSemester = document.getElementById('semester-filter') ? document.getElementById('semester-filter').value : 'All';
+    const uploadSemester = document.getElementById('note-semester') ? document.getElementById('note-semester').value : 'Semester 1';
+
+    if (filterSelect) {
+        const currentCategory = filterSelect.value;
+        filterSelect.options.length = 0;
+        filterSelect.add(new Option("All Subjects", "All"));
+        filterSelect.add(new Option("⭐ My Favorites", "Favorites"));
+        
+        let categoryExists = false;
+        allSubjects.forEach(sub => {
+            const subSem = sub.semester || "Semester 2";
+            if (navSemester === "All" || subSem === navSemester) {
+                filterSelect.add(new Option(sub.name, sub.name));
+                if (sub.name === currentCategory) categoryExists = true;
+            }
+        });
+        filterSelect.value = categoryExists ? currentCategory : "All";
+    }
+
+    if (uploadSelect) uploadSelect.options.length = 0;
+    if (deleteSelect) deleteSelect.options.length = 0;
+
+    allSubjects.forEach(sub => {
+        const subSem = sub.semester || "Semester 2";
+        if (subSem === uploadSemester) {
+            if (uploadSelect) uploadSelect.add(new Option(sub.name, sub.name));
+            if (deleteSelect) deleteSelect.add(new Option(sub.name, sub.id));
+        }
+    });
+}
+
 window.addSubject = async function() {
     const nameInput = document.getElementById('new-subject-name');
     const subjectName = nameInput.value.trim();   
+    const semester = document.getElementById('note-semester').value;
+    
     if (!subjectName) {
         showToast("Please enter a subject name.", "error");
         return;
     }
     try {
-        await addDoc(collection(db, "subjects"), { name: subjectName });
-        showToast(`Subject "${subjectName}" added!`, "success");
+        await addDoc(collection(db, "subjects"), { 
+            name: subjectName,
+            semester: semester 
+        });
+        showToast(`Subject "${subjectName}" added to ${semester}!`, "success");
         nameInput.value = '';
         fetchSubjects();
     } catch (error) {

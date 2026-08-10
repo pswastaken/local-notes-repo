@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, setDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCFWwVVHUBppZgxrf4FYB8G_TeYgjyY6CY",
@@ -172,6 +172,27 @@ window.cancelGoogleSignup = function() {
     document.getElementById('google-role').value = 'student';
     document.getElementById('google-teacher-code').classList.add('hidden');
     document.getElementById('google-teacher-code').value = '';
+}
+
+window.resetPassword = async function() {
+    const email = document.getElementById('auth-email').value.trim();
+    if (!email) {
+        showToast("Please enter your email address first.", "error");
+        return;
+    }
+    try {
+        await sendPasswordResetEmail(auth, email);
+        showToast("Password reset link sent to your Gmail!", "success");
+    } catch (error) {
+        console.error("Password reset error:", error);
+        if (error.code === 'auth/user-not-found') {
+            showToast("No account found with this email.", "error");
+        } else if (error.code === 'auth/invalid-email') {
+            showToast("Please enter a valid email address.", "error");
+        } else {
+            showToast("Failed to send password reset email.", "error");
+        }
+    }
 }
 
 function finalizeLogin() {
@@ -530,6 +551,8 @@ let announcements = [];
 
 window.postAnnouncement = async function() {
     const text = document.getElementById('announcement-text').value.trim();
+    const semester = document.getElementById('announcement-semester').value;
+    
     if (!text) {
         showToast("Please type an announcement first.", "error");
         return;
@@ -537,10 +560,11 @@ window.postAnnouncement = async function() {
     try {
         await addDoc(collection(db, "announcements"), {
             text: text,
+            semester: semester,
             timestamp: Date.now()
         });
         document.getElementById('announcement-text').value = '';
-        showToast("Announcement broadcasted!", "success");
+        showToast(`Announcement broadcasted for ${semester}!`, "success");
         fetchAnnouncements();
     } catch (e) {
         console.error("Error posting announcement:", e);
@@ -567,14 +591,21 @@ window.renderAnnouncements = function() {
     const badge = document.getElementById('notification-badge');
     list.innerHTML = '';
 
-    if (announcements.length === 0) {
-        list.innerHTML = '<p style="color: #888; font-size: 0.9rem; text-align: center; margin-top: 10px;">No announcements yet.</p>';
+    const currentNavSemester = document.getElementById('semester-filter') ? document.getElementById('semester-filter').value : 'All';
+
+    const filteredAnnouncements = announcements.filter(a => {
+        const targetSem = a.semester || "All"; 
+        return currentNavSemester === "All" || targetSem === "All" || targetSem === currentNavSemester;
+    });
+
+    if (filteredAnnouncements.length === 0) {
+        list.innerHTML = '<p style="color: #888; font-size: 0.9rem; text-align: center; margin-top: 10px;">No announcements for this semester.</p>';
         badge.classList.add('hidden');
         return;
     }
 
     const lastSeen = localStorage.getItem('studyHubLastSeenAnnouncement') || 0;
-    const latestTimestamp = announcements[0].timestamp;
+    const latestTimestamp = filteredAnnouncements[0].timestamp;
     
     if (latestTimestamp > lastSeen && currentRole === 'student') {
         badge.classList.remove('hidden');
@@ -582,11 +613,14 @@ window.renderAnnouncements = function() {
         badge.classList.add('hidden');
     }
 
-    announcements.forEach(a => {
+    filteredAnnouncements.forEach(a => {
         const dateObj = new Date(a.timestamp);
         const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const semBadge = a.semester && a.semester !== 'All' ? `<span class="tag" style="font-size: 0.7rem; padding: 2px 6px; margin-bottom: 6px; display: inline-block;">${a.semester}</span>` : '';
+        
         list.innerHTML += `
             <div class="announcement-item">
+                ${semBadge}
                 <div>${a.text}</div>
                 <span class="announcement-date">${dateStr}</span>
             </div>
